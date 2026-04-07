@@ -89,6 +89,7 @@ bool WAIT_POS = true;           // tracking if the linkage is moving to the wait
 
 unsigned long arrivalTime;            // timer for tracking a wait period upon reaching a desired position
 const int targetActivateTime = 250;   // time to activate a target
+const int mintargetActivateTime = 150;   // minimum time to activate a target (to prevent false positives due to noise)
 float Zombies[4];                     // An array to hold information on locations of all zombies in play
 
 // float sampleTime = 1.5             // sample time in ms
@@ -112,16 +113,22 @@ long previousVelCompTime   = 0; // [microseconds] System clock value the last ti
 // Target positions:
 const int CALIBRATION_VOLTAGE  = -5; // [Volt] Motor voltage used during the calibration process
 const int TARGET_1_POSITION    = 563; // [encoder counts] Motor position corresponding to first target
-const int TARGET_2_POSITION    = 975; // [encoder counts] Motor position corresponding to second target
-const int TARGET_3_POSITION    = 1340; // [encoder counts] Motor position corresponding to third target
-const int TARGET_4_POSITION    = 2272; // [encoder counts] Motor position corresponding to fourth target
+const int TARGET_2_POSITION    = 953; // [encoder counts] Motor position corresponding to second target
+const int TARGET_3_POSITION    = 1276; // [encoder counts] Motor position corresponding to third target
+const int TARGET_4_POSITION    = 2141; // [encoder counts] Motor position corresponding to fourth target
 const int WAIT_POSITION        = TARGET_3_POSITION; // [encoder counts] Motor position corresponding to a wait position (when no targets are active)
 const int LOWER_BOUND          = TARGET_1_POSITION; // [encoder counts] Position of the left end stop
 const int UPPER_BOUND          = TARGET_4_POSITION; // [encoder counts] Position of the right end stop
 const int TARGET_BAND          = 10; // [encoder counts] "Close enough" range when moving towards a target.
 
 // List of target positions to reduce redundant code
-const int targetPos[4] = {TARGET_1_POSITION, TARGET_2_POSITION, TARGET_3_POSITION, TARGET_4_POSITION};
+// The first targetPos is used when rotating clockwise. The second targetPos is used when rotating counterclockwise.
+const int targetPos_FWD[4] = {TARGET_1_POSITION, TARGET_2_POSITION, TARGET_3_POSITION, TARGET_4_POSITION};
+const int targetPos_REV[4] = {564, 958, 1288, 2173};
+
+// the index holding the current target we are moving towards. 
+int currentTargetIndex = TARGET1;
+int nextTargetIndex = TARGET1;
 
 // Timing:
 //const long  WAIT_TIME          = 0; // [microseconds] Time waiting for the target to drop.
@@ -131,8 +138,8 @@ const int targetPos[4] = {TARGET_1_POSITION, TARGET_2_POSITION, TARGET_3_POSITIO
 
 //** PID Controller  **//
 // CONSTANTS:
-const float KP             =          0.11;               // [Volt / encoder counts] P-Gain
-const float KI             =          0.08;               // [Volt / (encoder counts * seconds)] I-Gain
+const float KP             =          0.24;               // [Volt / encoder counts] P-Gain
+const float KI             =          0.2;               // [Volt / (encoder counts * seconds)] I-Gain
 const float KD             =          0.009;               // [Volt * seconds / encoder counts] D-Gain
 const float SUPPLY_VOLTAGE =          10;               // [Volt] Supply voltage at the HBridge
 const float FRICTION_COMP_VOLTAGE =   1.5;               // [Volt] Voltage needed to overcome friction
@@ -319,6 +326,8 @@ void loop() {
         integralError = 0;
         // Calibration is finalized. Transition into DETERMINE_ACTIVE_TARGETS state
         // Serial.println("State transition from CALIBRATE to CHOOSE_ACTIVE_TARGET");
+        currentTargetIndex = 0;
+        activeTargetPosition = targetPos_FWD[currentTargetIndex];
         state = CHOOSE_ACTIVE_TARGET;
       } 
 
@@ -355,18 +364,29 @@ void loop() {
         }
       }
 
-      // if the min index points to a valid target, move to that target
-      if (minIndex >= 0) {
-        activeTargetIndex = targetArr[minIndex];
-        activeTargetPosition = targetPos[activeTargetIndex];
-        WAIT_POS = false;
-        // Serial.println("Setting position to something other than wait");
-      } else {
-        activeTargetPosition = WAIT_POSITION;
-        WAIT_POS = true;
-        // Serial.println("Setting position to wait position");
+      // if we got zombie we go target, otherwise we go wait
+      nextTargetIndex = (minIndex >= 0) ? targetArr[minIndex] : TARGET3;
+      WAIT_POS = (minIndex >= 0) ? false : true; 
+          // judge by id number
+      if (nextTargetIndex > currentTargetIndex) {
+        // if the target is at the right, we use the forward compensation value
+        activeTargetPosition = targetPos_FWD[nextTargetIndex];
+      } 
+      else if (nextTargetIndex < currentTargetIndex) {
+        // if the target is at the left, we use the reverse compensation value
+        activeTargetPosition = targetPos_REV[nextTargetIndex];
+      } 
+      else {
+        // safety method: we update the position to make sure the activeTargetPosition is not 0
+        // activeTargetPosition = targetPos_FWD[nextTargetIndex];
       }
-      // if (minIndex >= 0) {
+      // Serial.print(">>> Active Target Index: ");
+      // Serial.print(nextTargetIndex + 1); // +1 is to display 1-4 instead of 0-3
+      // Serial.println(); // new line
+
+      // 更新当前索引记录
+      activeTargetIndex = nextTargetIndex;
+      
       //   Serial.print(">>> TARGET DETECTED! Target Index: ");
       //   Serial.print(activeTargetIndex + 1); // +1 是为了显示 1-4 而不是 0-3
       //   Serial.print(" | Moving to Position: ");
@@ -388,8 +408,10 @@ void loop() {
       // Serial.println("Inside MOVE_TO_TARGET");
       desiredPosition = activeTargetPosition;
 
+
       if (motorPosition <= activeTargetPosition + TARGET_BAND && motorPosition >= activeTargetPosition - TARGET_BAND) {
-        if (ProxSensors[activeTargetIndex].direction == BACKWARD){
+        currentTargetIndex = activeTargetIndex;
+        if (ProxSensors[activeTargetIndex].direction == BACKWARD && millis() - arrivalTime > mintargetActivateTime) {
           state = CHOOSE_ACTIVE_TARGET;
         }else
         if (millis() - arrivalTime > targetActivateTime || WAIT_POS){
@@ -413,6 +435,7 @@ void loop() {
       while (1); // infinite loop to halt the program
     break;
   }
+
   // End of the state machine.
   //******************************************************************************//
 
@@ -530,9 +553,38 @@ void loop() {
   // else Serial.print("BCK");
 
   // Serial.println(); // 换行
-  Serial.print("MP: "); 
+            Serial.print(">ActivePos:");
+      Serial.println(activeTargetPosition);
+      Serial.print(">DesirdPos:");
+      Serial.println(desiredPosition);
+  Serial.print(">MP:"); 
 Serial.print(motorPosition); // 这就是你当前的编码器数值
 Serial.println(); // 换行
+Serial.print(">Data:");
+      Serial.print(activeTargetPosition);
+      Serial.print(";");
+      Serial.print(desiredPosition);
+  Serial.print(";"); 
+Serial.print(motorPosition); // 这就是你当前的编码器数值
+Serial.println(); // 换行
+
+
+  // Serial.print(">>> State: ");
+  // switch (state) {
+  //   case CALIBRATE:
+  //     Serial.println("CALIBRATE");
+  //     break;
+  //   case CHOOSE_ACTIVE_TARGET:
+  //     Serial.println("CHOOSE_ACTIVE_TARGET");
+  //     break;
+  //   case MOVE_TO_TARGET:
+  //     Serial.println("MOVE_TO_TARGET");
+  //     break;
+  //   default:
+  //     Serial.println("UNKNOWN STATE");
+  //     break;
+  // }
+
 }
 // End of main loop
 //***********************************************************************//
