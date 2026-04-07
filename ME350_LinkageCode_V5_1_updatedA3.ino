@@ -88,8 +88,8 @@ int idx = -1;                   // index of target, based on targetArr
 bool WAIT_POS = true;           // tracking if the linkage is moving to the wait position
 
 unsigned long arrivalTime;            // timer for tracking a wait period upon reaching a desired position
-const int targetActivateTime = 500;   // time to activate a target
-const int mintargetActivateTime = 500;   // minimum time to activate a target (to prevent false positives due to noise)
+const int targetActivateTime = 300;   // time to activate a target
+const int mintargetActivateTime = 300;   // minimum time to activate a target (to prevent false positives due to noise)
 float Zombies[4];                     // An array to hold information on locations of all zombies in play
 
 // float sampleTime = 1.5             // sample time in ms
@@ -113,7 +113,7 @@ long previousVelCompTime   = 0; // [microseconds] System clock value the last ti
 // Target positions:
 const int CALIBRATION_VOLTAGE  = -5; // [Volt] Motor voltage used during the calibration process
 const int TARGET_1_POSITION    = 563; // [encoder counts] Motor position corresponding to first target
-const int TARGET_2_POSITION    = 953; // [encoder counts] Motor position corresponding to second target
+const int TARGET_2_POSITION    = 944; // [encoder counts] Motor position corresponding to second target
 const int TARGET_3_POSITION    = 1276; // [encoder counts] Motor position corresponding to third target
 const int TARGET_4_POSITION    = 2141; // [encoder counts] Motor position corresponding to fourth target
 const int WAIT_POSITION        = TARGET_3_POSITION; // [encoder counts] Motor position corresponding to a wait position (when no targets are active)
