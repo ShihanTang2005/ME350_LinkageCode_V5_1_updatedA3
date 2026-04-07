@@ -88,8 +88,8 @@ int idx = -1;                   // index of target, based on targetArr
 bool WAIT_POS = true;           // tracking if the linkage is moving to the wait position
 
 unsigned long arrivalTime;            // timer for tracking a wait period upon reaching a desired position
-const int targetActivateTime = 250;   // time to activate a target
-const int mintargetActivateTime = 150;   // minimum time to activate a target (to prevent false positives due to noise)
+const int targetActivateTime = 500;   // time to activate a target
+const int mintargetActivateTime = 500;   // minimum time to activate a target (to prevent false positives due to noise)
 float Zombies[4];                     // An array to hold information on locations of all zombies in play
 
 // float sampleTime = 1.5             // sample time in ms
