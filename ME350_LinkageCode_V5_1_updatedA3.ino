@@ -172,6 +172,8 @@ const int PIN_POTENTIOMETER       = A4; // Connected to potentiometer used to te
 // Add this line of code if you want to use two limit switches; const int PIN_NRL_LIMIT_SWITCH_2  = 11
 // ^KEEP IN MIND THAT YOU HAVE TO ADD CODE DOWNSTREAM (FOR EXAMPLE YOU NEED TO ADD THIS VARIABLE IN THE DECLARATION SECTION
 
+const float TRACK_WEIGHTS[4] = {1.0, 0.6, 0.4, 1.0};
+
 // End of CONSTANTS AND GLOBAL VARIABLES
 
 
@@ -353,7 +355,8 @@ void loop() {
 
         // Calculate the distance to the front of the rail by taking a percentage of how much rail
         // the zombie has left to travel.
-        Zombies[idx] = (ProxSensors[idx].currVal - ProxRange[idx][1]) / (ProxRange[idx][0] - ProxRange[idx][1]);
+        Zombies[idx] = TRACK_WEIGHTS[idx] *
+        (ProxSensors[idx].currVal - ProxRange[idx][1]) / (ProxRange[idx][0] - ProxRange[idx][1]);
 
         // Check to see if the zombie is traveling forward and it is closer than the previous zombie
         if (ProxSensors[idx].direction == FORWARD && Zombies[idx] < closestZombieDist) {
