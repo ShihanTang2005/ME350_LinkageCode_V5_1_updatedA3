@@ -23,14 +23,14 @@ int state = CALIBRATE;
 //** Proximity Sensors or Potentiometer: **//
 // CONSTANTS: 
 // Definition of proximity sensor Limits for each target:
-const int PROXIMITYSENSE1_MAX = 596;     // [proximity sensor counts] Value of prox sensor 1 when zombie is closest to photosensor
-const int PROXIMITYSENSE1_MIN = 104;     // [proximity sensor counts] Value of prox sensor 1 when zombie is closest to prox sensor
-const int PROXIMITYSENSE2_MAX = 578;     // [proximity sensor counts] Value of prox sensor 2 when zombie is closest to photosensor
-const int PROXIMITYSENSE2_MIN = 128;     // [proximity sensor counts] Value of prox sensor 2 when zombie is closest to prox sensor
-const int PROXIMITYSENSE3_MAX = 593;     // [proximity sensor counts] Value of prox sensor 3 when zombie is closest to photosensor
-const int PROXIMITYSENSE3_MIN = 145;     // [proximity sensor counts] Value of prox sensor 3 when zombie is closest to prox sensor
-const int PROXIMITYSENSE4_MAX = 597;     // [proximity sensor counts] Value of prox sensor 4 when zombie is closest to photosensor
-const int PROXIMITYSENSE4_MIN = 99;     // [proximity sensor counts] Value of prox sensor 4 when zombie is closest to prox sensor
+const int PROXIMITYSENSE1_MAX = 650;     // [proximity sensor counts] Value of prox sensor 1 when zombie is closest to photosensor
+const int PROXIMITYSENSE1_MIN = 143;     // [proximity sensor counts] Value of prox sensor 1 when zombie is closest to prox sensor
+const int PROXIMITYSENSE2_MAX = 618;     // [proximity sensor counts] Value of prox sensor 2 when zombie is closest to photosensor
+const int PROXIMITYSENSE2_MIN = 127;     // [proximity sensor counts] Value of prox sensor 2 when zombie is closest to prox sensor
+const int PROXIMITYSENSE3_MAX = 625;     // [proximity sensor counts] Value of prox sensor 3 when zombie is closest to photosensor
+const int PROXIMITYSENSE3_MIN = 154;     // [proximity sensor counts] Value of prox sensor 3 when zombie is closest to prox sensor
+const int PROXIMITYSENSE4_MAX = 605;     // [proximity sensor counts] Value of prox sensor 4 when zombie is closest to photosensor
+const int PROXIMITYSENSE4_MIN = 91;     // [proximity sensor counts] Value of prox sensor 4 when zombie is closest to prox sensor
 
 const int ProxRange[4][2] = {{PROXIMITYSENSE1_MAX, PROXIMITYSENSE1_MIN},
                              {PROXIMITYSENSE2_MAX, PROXIMITYSENSE2_MIN},
@@ -115,7 +115,7 @@ const int CALIBRATION_VOLTAGE  = -5; // [Volt] Motor voltage used during the cal
 const int TARGET_1_POSITION    = 563; // [encoder counts] Motor position corresponding to first target
 const int TARGET_2_POSITION    = 944; // [encoder counts] Motor position corresponding to second target
 const int TARGET_3_POSITION    = 1276; // [encoder counts] Motor position corresponding to third target
-const int TARGET_4_POSITION    = 2141; // [encoder counts] Motor position corresponding to fourth target
+const int TARGET_4_POSITION    = 2180; // [encoder counts] Motor position corresponding to fourth target
 const int WAIT_POSITION        = TARGET_3_POSITION; // [encoder counts] Motor position corresponding to a wait position (when no targets are active)
 const int LOWER_BOUND          = TARGET_1_POSITION; // [encoder counts] Position of the left end stop
 const int UPPER_BOUND          = TARGET_4_POSITION; // [encoder counts] Position of the right end stop
@@ -124,7 +124,7 @@ const int TARGET_BAND          = 10; // [encoder counts] "Close enough" range wh
 // List of target positions to reduce redundant code
 // The first targetPos is used when rotating clockwise. The second targetPos is used when rotating counterclockwise.
 const int targetPos_FWD[4] = {TARGET_1_POSITION, TARGET_2_POSITION, TARGET_3_POSITION, TARGET_4_POSITION};
-const int targetPos_REV[4] = {564, 958, 1288, 2173};
+const int targetPos_REV[4] = {564, 958, 1288, 2192};
 
 // the index holding the current target we are moving towards. 
 int currentTargetIndex = TARGET1;
