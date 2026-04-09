@@ -113,14 +113,14 @@ long previousVelCompTime   = 0; // [microseconds] System clock value the last ti
 //** High-level behavior of the controller:  **//
 // CONSTANTS:
 // Target positions:
-const int CALIBRATION_VOLTAGE  = -3.5; // [Volt] Motor voltage used during the calibration process
-const int TARGET_1_POSITION    = 617; // [encoder counts] Motor position corresponding to first target
-const int TARGET_2_POSITION    = 963; // [encoder counts] Motor position corresponding to second target
-const int TARGET_3_POSITION    = 1309; // [encoder counts] Motor position corresponding to third target
-const int TARGET_4_POSITION    = 2194; // [encoder counts] Motor position corresponding to fourth target
+const int CALIBRATION_VOLTAGE  = -4; // [Volt] Motor voltage used during the calibration process
+const int TARGET_1_POSITION    = 605; // [encoder counts] Motor position corresponding to first target
+const int TARGET_2_POSITION    = 996; // [encoder counts] Motor position corresponding to second target
+const int TARGET_3_POSITION    = 1400; // [encoder counts] Motor position corresponding to third target
+const int TARGET_4_POSITION    = 2240; // [encoder counts] Motor position corresponding to fourth target
 const int WAIT_POSITION        = TARGET_3_POSITION; // [encoder counts] Motor position corresponding to a wait position (when no targets are active)
 const int LOWER_BOUND          = 563; // [encoder counts] Position of the left end stop
-const int UPPER_BOUND          = 2289; // [encoder counts] Position of the right end stop
+const int UPPER_BOUND          = 2311; // [encoder counts] Position of the right end stop
 const int TARGET_BAND          = 10; // [encoder counts] "Close enough" range when moving towards a target.
 
 
@@ -130,7 +130,7 @@ unsigned long moveStartTime = 0; // record the time the link starts to move towa
 // List of target positions to reduce redundant code
 // The first targetPos is used when rotating clockwise. The second targetPos is used when rotating counterclockwise.
 const int targetPos_FWD[4] = {TARGET_1_POSITION, TARGET_2_POSITION, TARGET_3_POSITION, TARGET_4_POSITION};
-const int targetPos_REV[4] = {626, 972, 1300, 2246};
+const int targetPos_REV[4] = {724, 1040, 1447, 2282};
 
 // the index holding the current target we are moving towards. 
 int currentTargetIndex = TARGET1;
