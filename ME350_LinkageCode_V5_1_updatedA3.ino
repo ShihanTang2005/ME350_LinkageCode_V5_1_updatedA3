@@ -90,8 +90,8 @@ bool WAIT_POS = true;           // tracking if the linkage is moving to the wait
 unsigned long arrivalTime;            // timer for tracking a wait period upon reaching a desired position
 // const int targetActivateTime = 300;   // time to activate a target
 // const int mintargetActivateTime = 300;   // minimum time to activate a target (to prevent false positives due to noise)
-const int targetActivateTime[4]    = {290, 265, 240, 282}; 
-const int mintargetActivateTime[4] = {290, 265, 240, 282};
+const int targetActivateTime[4]    = {310, 284, 240, 299}; 
+const int mintargetActivateTime[4] = {310, 284, 240, 299};
 float Zombies[4];                     // An array to hold information on locations of all zombies in play
 
 // float sampleTime = 1.5             // sample time in ms
@@ -121,7 +121,7 @@ const int TARGET_4_POSITION    = 2194; // [encoder counts] Motor position corres
 const int WAIT_POSITION        = TARGET_3_POSITION; // [encoder counts] Motor position corresponding to a wait position (when no targets are active)
 const int LOWER_BOUND          = 563; // [encoder counts] Position of the left end stop
 const int UPPER_BOUND          = 2289; // [encoder counts] Position of the right end stop
-const int TARGET_BAND          = 20; // [encoder counts] "Close enough" range when moving towards a target.
+const int TARGET_BAND          = 10; // [encoder counts] "Close enough" range when moving towards a target.
 
 
 unsigned long moveStartTime = 0; // record the time the link starts to move towards the next target
