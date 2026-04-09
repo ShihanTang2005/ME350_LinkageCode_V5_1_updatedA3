@@ -23,14 +23,14 @@ int state = CALIBRATE;
 //** Proximity Sensors or Potentiometer: **//
 // CONSTANTS: 
 // Definition of proximity sensor Limits for each target:
-const int PROXIMITYSENSE1_MAX = 650;     // [proximity sensor counts] Value of prox sensor 1 when zombie is closest to photosensor
-const int PROXIMITYSENSE1_MIN = 143;     // [proximity sensor counts] Value of prox sensor 1 when zombie is closest to prox sensor
-const int PROXIMITYSENSE2_MAX = 618;     // [proximity sensor counts] Value of prox sensor 2 when zombie is closest to photosensor
-const int PROXIMITYSENSE2_MIN = 127;     // [proximity sensor counts] Value of prox sensor 2 when zombie is closest to prox sensor
-const int PROXIMITYSENSE3_MAX = 625;     // [proximity sensor counts] Value of prox sensor 3 when zombie is closest to photosensor
-const int PROXIMITYSENSE3_MIN = 154;     // [proximity sensor counts] Value of prox sensor 3 when zombie is closest to prox sensor
-const int PROXIMITYSENSE4_MAX = 605;     // [proximity sensor counts] Value of prox sensor 4 when zombie is closest to photosensor
-const int PROXIMITYSENSE4_MIN = 91;     // [proximity sensor counts] Value of prox sensor 4 when zombie is closest to prox sensor
+const int PROXIMITYSENSE1_MAX = 595;     // [proximity sensor counts] Value of prox sensor 1 when zombie is closest to photosensor
+const int PROXIMITYSENSE1_MIN = 98;     // [proximity sensor counts] Value of prox sensor 1 when zombie is closest to prox sensor
+const int PROXIMITYSENSE2_MAX = 611;     // [proximity sensor counts] Value of prox sensor 2 when zombie is closest to photosensor
+const int PROXIMITYSENSE2_MIN = 116;     // [proximity sensor counts] Value of prox sensor 2 when zombie is closest to prox sensor
+const int PROXIMITYSENSE3_MAX = 597;     // [proximity sensor counts] Value of prox sensor 3 when zombie is closest to photosensor
+const int PROXIMITYSENSE3_MIN = 138;     // [proximity sensor counts] Value of prox sensor 3 when zombie is closest to prox sensor
+const int PROXIMITYSENSE4_MAX = 595;     // [proximity sensor counts] Value of prox sensor 4 when zombie is closest to photosensor
+const int PROXIMITYSENSE4_MIN = 103;     // [proximity sensor counts] Value of prox sensor 4 when zombie is closest to prox sensor
 
 const int ProxRange[4][2] = {{PROXIMITYSENSE1_MAX, PROXIMITYSENSE1_MIN},
                              {PROXIMITYSENSE2_MAX, PROXIMITYSENSE2_MIN},
@@ -88,8 +88,10 @@ int idx = -1;                   // index of target, based on targetArr
 bool WAIT_POS = true;           // tracking if the linkage is moving to the wait position
 
 unsigned long arrivalTime;            // timer for tracking a wait period upon reaching a desired position
-const int targetActivateTime = 300;   // time to activate a target
-const int mintargetActivateTime = 300;   // minimum time to activate a target (to prevent false positives due to noise)
+// const int targetActivateTime = 300;   // time to activate a target
+// const int mintargetActivateTime = 300;   // minimum time to activate a target (to prevent false positives due to noise)
+const int targetActivateTime[4]    = {290, 265, 240, 282}; 
+const int mintargetActivateTime[4] = {290, 265, 240, 282};
 float Zombies[4];                     // An array to hold information on locations of all zombies in play
 
 // float sampleTime = 1.5             // sample time in ms
@@ -111,20 +113,24 @@ long previousVelCompTime   = 0; // [microseconds] System clock value the last ti
 //** High-level behavior of the controller:  **//
 // CONSTANTS:
 // Target positions:
-const int CALIBRATION_VOLTAGE  = -5; // [Volt] Motor voltage used during the calibration process
-const int TARGET_1_POSITION    = 563; // [encoder counts] Motor position corresponding to first target
-const int TARGET_2_POSITION    = 944; // [encoder counts] Motor position corresponding to second target
-const int TARGET_3_POSITION    = 1276; // [encoder counts] Motor position corresponding to third target
-const int TARGET_4_POSITION    = 2180; // [encoder counts] Motor position corresponding to fourth target
+const int CALIBRATION_VOLTAGE  = -3.5; // [Volt] Motor voltage used during the calibration process
+const int TARGET_1_POSITION    = 617; // [encoder counts] Motor position corresponding to first target
+const int TARGET_2_POSITION    = 963; // [encoder counts] Motor position corresponding to second target
+const int TARGET_3_POSITION    = 1309; // [encoder counts] Motor position corresponding to third target
+const int TARGET_4_POSITION    = 2194; // [encoder counts] Motor position corresponding to fourth target
 const int WAIT_POSITION        = TARGET_3_POSITION; // [encoder counts] Motor position corresponding to a wait position (when no targets are active)
-const int LOWER_BOUND          = TARGET_1_POSITION; // [encoder counts] Position of the left end stop
-const int UPPER_BOUND          = TARGET_4_POSITION; // [encoder counts] Position of the right end stop
-const int TARGET_BAND          = 10; // [encoder counts] "Close enough" range when moving towards a target.
+const int LOWER_BOUND          = 563; // [encoder counts] Position of the left end stop
+const int UPPER_BOUND          = 2289; // [encoder counts] Position of the right end stop
+const int TARGET_BAND          = 20; // [encoder counts] "Close enough" range when moving towards a target.
+
+
+unsigned long moveStartTime = 0; // record the time the link starts to move towards the next target
+
 
 // List of target positions to reduce redundant code
 // The first targetPos is used when rotating clockwise. The second targetPos is used when rotating counterclockwise.
 const int targetPos_FWD[4] = {TARGET_1_POSITION, TARGET_2_POSITION, TARGET_3_POSITION, TARGET_4_POSITION};
-const int targetPos_REV[4] = {564, 958, 1288, 2192};
+const int targetPos_REV[4] = {626, 972, 1300, 2246};
 
 // the index holding the current target we are moving towards. 
 int currentTargetIndex = TARGET1;
@@ -138,11 +144,14 @@ int nextTargetIndex = TARGET1;
 
 //** PID Controller  **//
 // CONSTANTS:
-const float KP             =          0.24;               // [Volt / encoder counts] P-Gain
+const float KP             =          0.36;               // [Volt / encoder counts] P-Gain
 const float KI             =          0.2;               // [Volt / (encoder counts * seconds)] I-Gain
-const float KD             =          0.009;               // [Volt * seconds / encoder counts] D-Gain
+const float KD             =          0.012;               // [Volt * seconds / encoder counts] D-Gain
 const float SUPPLY_VOLTAGE =          10;               // [Volt] Supply voltage at the HBridge
-const float FRICTION_COMP_VOLTAGE =   1.5;               // [Volt] Voltage needed to overcome friction
+float FRICTION_COMP_VOLTAGE =   2.4;               // [Volt] Voltage needed to overcome friction
+const float FRICTION_COMP_VOLTAGE_normal = 2.4;  
+const float FRICTION_COMP_VOLTAGE_3_to_4 = 2.7;
+const int switch_to_4_threshold = 1600; // encoder count at which we switch to the higher friction compensation voltage for targets 3 and 4
 // VARIABLES:
 int desiredPosition  = 0; // [encoder counts] desired motor position
 float positionError  = 0; // [encoder counts] Position error
@@ -172,7 +181,7 @@ const int PIN_POTENTIOMETER       = A4; // Connected to potentiometer used to te
 // Add this line of code if you want to use two limit switches; const int PIN_NRL_LIMIT_SWITCH_2  = 11
 // ^KEEP IN MIND THAT YOU HAVE TO ADD CODE DOWNSTREAM (FOR EXAMPLE YOU NEED TO ADD THIS VARIABLE IN THE DECLARATION SECTION
 
-const float TRACK_WEIGHTS[4] = {1.0, 0.6, 0.4, 1.0};
+const float TRACK_WEIGHTS[4] = {1.0, 0.7, 0.5, 1.0};
 
 // End of CONSTANTS AND GLOBAL VARIABLES
 
@@ -323,6 +332,10 @@ void loop() {
       if (digitalRead(PIN_NRL_LIMIT_SWITCH)==HIGH && motorVelocity==0) { 
         // We reached the endstop.  Update the motor position to the limit:
         // (NOTE: If the limit switch is on the right, this must be UPPER_BOUND)
+        desiredVoltage = 0;
+
+        delay(500); // wait for 0.5s
+
         motorPosition = LOWER_BOUND;  
         // Reset the error integrator:
         integralError = 0;
@@ -398,6 +411,7 @@ void loop() {
       //   Serial.println(">>> Scanning... No active zombies moving forward. Going to WAIT_POS.");
       // }
       state = MOVE_TO_TARGET;
+      moveStartTime = millis();
       // Serial.println("Switching state to MOVE_TO_TARGET");
       
       // Otherwise, we stay in DETERMINE_ACTIVE_TARGETS
@@ -414,14 +428,19 @@ void loop() {
 
       if (motorPosition <= activeTargetPosition + TARGET_BAND && motorPosition >= activeTargetPosition - TARGET_BAND) {
         currentTargetIndex = activeTargetIndex;
-        if (ProxSensors[activeTargetIndex].direction == BACKWARD && millis() - arrivalTime > mintargetActivateTime) {
+        if (ProxSensors[activeTargetIndex].direction == BACKWARD && millis() - arrivalTime > mintargetActivateTime[activeTargetIndex]) {
           state = CHOOSE_ACTIVE_TARGET;
         }else
-        if (millis() - arrivalTime > targetActivateTime || WAIT_POS){
+        if (millis() - arrivalTime > targetActivateTime[activeTargetIndex] || WAIT_POS){
           state = CHOOSE_ACTIVE_TARGET;
         }
         } else {
           arrivalTime = millis();
+        }
+
+        if (millis() - moveStartTime > 1000) {
+            state = CHOOSE_ACTIVE_TARGET; // 强行拉回，重新寻找最危险的目标！
+            WAIT_POS = false; 
         }
 
       break;
@@ -466,6 +485,12 @@ void loop() {
     integralError = integralError + positionError * (float)(executionDuration) / 1000000; 
     // Compute the velocity error (desired velocity is 0) [encoder counts / seconds]
     velocityError = 0 - motorVelocity;
+
+    // If the position error is very large, we are probably far away from the target and it does not make sense to keep integrating the error (and thus ask for higher and higher output voltages).  Instead, stop the integrator if the error is very large. We do this by reversing the summation at the beginning of this function block:
+    if (abs(positionError) > 150) {
+        integralError = 0; 
+    }
+
     // This is the actual controller function that uses the error in 
     // position and velocity and the integrated error and computes a
     // desired voltage that should be sent to the motor:
@@ -477,13 +502,25 @@ void loop() {
     // Compensate for friction.  That is, if we now the direction of 
     // desired motion, add a base command that helps with moving in this
     // direction:
+    if (motorPosition > switch_to_4_threshold) {  // 如果连杆已经伸展到了 3 和 4 的中间区域
+        FRICTION_COMP_VOLTAGE = FRICTION_COMP_VOLTAGE_3_to_4;
+    }else{
+        FRICTION_COMP_VOLTAGE = FRICTION_COMP_VOLTAGE_normal;
+    }
+    
+
     if (positionError < -5) {
       desiredVoltage = desiredVoltage - FRICTION_COMP_VOLTAGE;
     }
     if (positionError > +5) {
       desiredVoltage = desiredVoltage + FRICTION_COMP_VOLTAGE;
     }
-
+    // if error is too large, we directly use full throttle to get there faster, ignoring the PID output.  This is because we want to be fast when the error is large, and we don't care about overshooting in this case.  We will quickly correct for overshooting in the next iterations of the loop, since we are running the loop at a high frequency.
+    if (positionError < -800) {
+        desiredVoltage = -SUPPLY_VOLTAGE;
+    } else if (positionError > 800) {
+        desiredVoltage = SUPPLY_VOLTAGE;
+    }
     // Anti-Wind-Up
     if (abs(desiredVoltage)>SUPPLY_VOLTAGE) {
       // If we are already saturating our output voltage, it does not make
