@@ -126,6 +126,7 @@ const int TARGET_BAND          = 10; // [encoder counts] "Close enough" range wh
 
 unsigned long moveStartTime = 0; // record the time the link starts to move towards the next target
 
+bool isIrradiating = false; // whether the light is currently on and irradiating the zombie
 
 // List of target positions to reduce redundant code
 // The first targetPos is used when rotating clockwise. The second targetPos is used when rotating counterclockwise.
@@ -342,7 +343,8 @@ void loop() {
         // Calibration is finalized. Transition into DETERMINE_ACTIVE_TARGETS state
         // Serial.println("State transition from CALIBRATE to CHOOSE_ACTIVE_TARGET");
         currentTargetIndex = 0;
-        activeTargetPosition = targetPos_FWD[currentTargetIndex];
+        activeTargetIndex = 2;
+        activeTargetPosition = targetPos_FWD[activeTargetIndex];
         state = CHOOSE_ACTIVE_TARGET;
       } 
 
@@ -381,7 +383,7 @@ void loop() {
       }
 
       // if we got zombie we go target, otherwise we go wait
-      nextTargetIndex = (minIndex >= 0) ? targetArr[minIndex] : TARGET3;
+      nextTargetIndex = (minIndex >= 0) ? targetArr[minIndex] : currentTargetIndex;
       WAIT_POS = (minIndex >= 0) ? false : true; 
           // judge by id number
       if (nextTargetIndex > currentTargetIndex) {
@@ -412,6 +414,12 @@ void loop() {
       // }
       state = MOVE_TO_TARGET;
       moveStartTime = millis();
+
+      // We are just switching targets, so we are not irradiating yet.
+      isIrradiating = false;
+      // When we switch targets, we want to reset the integrator
+      integralError = 0;
+
       // Serial.println("Switching state to MOVE_TO_TARGET");
       
       // Otherwise, we stay in DETERMINE_ACTIVE_TARGETS
@@ -428,14 +436,17 @@ void loop() {
 
       if (motorPosition <= activeTargetPosition + TARGET_BAND && motorPosition >= activeTargetPosition - TARGET_BAND) {
         currentTargetIndex = activeTargetIndex;
+        if (isIrradiating == false) {
+              arrivalTime = millis();
+              isIrradiating = true; 
+        }
+
         if (ProxSensors[activeTargetIndex].direction == BACKWARD && millis() - arrivalTime > mintargetActivateTime[activeTargetIndex]) {
           state = CHOOSE_ACTIVE_TARGET;
         }else
         if (millis() - arrivalTime > targetActivateTime[activeTargetIndex] || WAIT_POS){
           state = CHOOSE_ACTIVE_TARGET;
         }
-        } else {
-          arrivalTime = millis();
         }
 
         if (millis() - moveStartTime > 1000) {
